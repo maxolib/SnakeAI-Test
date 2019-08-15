@@ -5,6 +5,8 @@ using UniRx;
 using System;
 using Snake.Scripts.Utilities;
 using MLAgents;
+using UnityEngine.UI;
+using TMPro;
 
 public class SnakeAgent : Agent {
 	// -------------------------------------------------------------------------------------------------
@@ -13,6 +15,8 @@ public class SnakeAgent : Agent {
 	[SerializeField] private GameObject m_Snake;
 	[SerializeField] private GameObject m_Food;
 	[SerializeField] private Transform m_TailTransform;
+	[SerializeField] private Canvas m_UI;
+	[SerializeField] private TextMeshProUGUI m_ScoreText;
 
 	// -------------------------------------------------------------------------------------------------
 	private SnakeAcademy _SnakeAcademy;
@@ -20,6 +24,7 @@ public class SnakeAgent : Agent {
 	private bool _IsPlay;
 	private State _State;
 	private float _Timer;
+	private IntReactiveProperty _score = new IntReactiveProperty();
 	private List<GameObject> _Tails;
 	private State.DirectionType _Direction;
 
@@ -38,7 +43,7 @@ public class SnakeAgent : Agent {
 			}
 		).AddTo(this);
 		
-		Observable.EveryUpdate().Where(_ => _Timer > _SnakeAcademy.Speed).Subscribe
+		Observable.EveryUpdate().Where(_ => _Timer > _SnakeAcademy.resetParameters["Speed"]).Subscribe
 		(
 			_ => 
 			{
@@ -52,12 +57,19 @@ public class SnakeAgent : Agent {
 				else if(_State.Eat)
 				{
 					SetReward(1f);
+					_score.SetValueAndForceNotify(_score.Value + 1);
 				}
 				RenderState();
 			}
 		).AddTo(this);
 
-
+		_score.Subscribe
+		(
+			_value =>
+			{
+				m_ScoreText.text = _value + "";
+			}
+		).AddTo(this);
 		RenderState();
 		_IsPlay = true;
 	}
@@ -100,14 +112,37 @@ public class SnakeAgent : Agent {
 
 	public override void CollectObservations()
     {
+		/*
+		SnakeBrainLearing
 	 	AddVectorObs(_State.Head);
 	 	AddVectorObs(_State.Food);
-		var distance = _State.Head - _State.Food;
-	 	AddVectorObs(Math.Abs(distance.x));
-	 	AddVectorObs(Math.Abs(distance.y));
+	 	AddVectorObs(Math.Abs(headX - foodX));
+	 	AddVectorObs(Math.Abs(headY - foodY));
 		AddVectorObs(_State.Tails.Count);
-		
-	
+		*/
+
+
+		// Snake10x10Learning
+		var headX = _State.Head.x / _State.Width;
+		var headY = _State.Head.y / _State.Height;
+		var foodX = _State.Food.x / _State.Width;
+		var foodY = _State.Food.y / _State.Height;
+	 	AddVectorObs(headX);
+	 	AddVectorObs(headY);
+	 	AddVectorObs(foodX);
+	 	AddVectorObs(foodY);
+	 	AddVectorObs(Math.Abs(headX - foodX));
+	 	AddVectorObs(Math.Abs(headY - foodY));
+		AddVectorObs(_State.Tails.Count);
+
+		// Obs State
+		for(int i = 0; i < _State.Width; i++)
+		{
+			for(int j = 0; j < _State.Height; j++)
+			{
+				AddVectorObs(_State.StateBlock[i, j].GetHashCode() / 5f);
+			}
+		}
     }
 
     public override void AgentAction(float[] vectorAction, string textAction)
@@ -144,13 +179,17 @@ public class SnakeAgent : Agent {
     {
 
     }
+
 	private void SetStateObject()
 	{
-		var size = _SnakeAcademy.StateSize;
+		var size = (int) _SnakeAcademy.resetParameters["StateSize"];
 		var groundSize = (size/2f) - 0.5f;
 		_State = new State(size, size);
 		m_Ground.transform.position = new Vector3(groundSize + transform.position.x, groundSize + transform.position.y	, 0);
 		m_Ground.transform.localScale = new Vector3(size, size, 0);
+		m_UI.transform.localPosition = new Vector3(groundSize, groundSize, 0);
+		m_UI.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(size, size);
+		_score.SetValueAndForceNotify(0);
 		if(_Tails != null)
 		{
 			for(int i = _Tails.Count - 1; i >= 0; i--)

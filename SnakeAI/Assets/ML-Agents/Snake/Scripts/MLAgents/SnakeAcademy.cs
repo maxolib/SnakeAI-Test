@@ -4,12 +4,10 @@ using UnityEngine;
 using MLAgents;
 
 public class SnakeAcademy : Academy {
-    public int StateSize;
-    public float Speed;
+	[SerializeField] private float m_ArenaScale;
     public override void InitializeAcademy()
     {
-        StateSize = (int) resetParameters["StateSize"];
-        Speed = resetParameters["Speed"];
+
     }
     public override void AcademyReset()
     {
@@ -18,8 +16,6 @@ public class SnakeAcademy : Academy {
 
     public override void AcademyStep()
     {
-
-
     }
 
 }

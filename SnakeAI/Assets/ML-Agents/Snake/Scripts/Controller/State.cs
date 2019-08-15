@@ -54,7 +54,6 @@ public class State{
 		// Wrong Direction
 		if(GetNegativeDirection(_direction) == Direction)
 		{
-			Debug.Log($"Negative direction {Direction}, {_direction}");
 			_direction = Direction;
 		}
 
@@ -64,7 +63,6 @@ public class State{
 			headNext.y >= Height || headNext.y < 0 || 
 			StateBlock[(int)headNext.x, (int)headNext.y] == BlockType.Tail)
 		{
-			Debug.Log("GameOver !!!!");
 			GameOver = true;
 			return;
 		}
@@ -100,7 +98,6 @@ public class State{
 	}
 	public void SetHead(Vector2 _index)
 	{
-		Debug.Log($"Size: {Width}, {Height} #### Head: {_index.x}, {_index.y}");
 		var oldHead = Head;
 		if(Eat)
 		{
